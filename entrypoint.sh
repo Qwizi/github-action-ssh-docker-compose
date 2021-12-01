@@ -10,17 +10,17 @@ cleanup() {
   log "Killing ssh agent."
   ssh-agent -k
   log "Removing workspace archive."
-  rm -f /tmp/workspace.tar.bz2
+  rm -f /tmp/${WORKSPACE}.tar.bz2
 }
 trap cleanup EXIT
 
 log "Packing workspace into archive to transfer onto remote machine."
-tar cjvf /tmp/workspace.tar.bz2 --exclude .git .
+tar cjvf /tmp/${WORKSPACE}.tar.bz2 --exclude .git .
 
 log "Launching ssh agent."
 eval `ssh-agent -s`
 
-remote_command="set -e ; log() { echo '>> [remote]' \$@ ; } ; cleanup() { log 'Removing workspace...'; rm -rf \"\$HOME/workspace\" ; } ; log 'Creating workspace directory...' ; mkdir -p \"\$HOME/workspace\" ; trap cleanup EXIT ; log 'Unpacking workspace...' ; tar -C \"\$HOME/workspace\" -xjv ; log 'Launching docker-compose...' ; cd \"\$HOME/workspace\" ; $ENV_ARGS docker-compose -f \"$DOCKER_COMPOSE_FILENAME\" -p \"$DOCKER_COMPOSE_PREFIX\" up -d --remove-orphans --build"
+remote_command="set -e ; log() { echo '>> [remote]' \$@ ; } ; cleanup() { log 'Removing workspace...'; rm -rf \"\$HOME/apps/${WORKSPACE}\" ; } ; log 'Creating workspace directory...' ; mkdir -p \"\$HOME/apps/${WORKSPACE}\" ; trap cleanup EXIT ; log 'Unpacking workspace...' ; tar -C \"\$HOME/apps/${WORKSPACE}\" -xjv ; log 'Launching docker-compose...' ; cd \"\$HOME/apps/${WORKSPACE}\" ; $ENV_ARGS docker-compose -f \"$DOCKER_COMPOSE_FILENAME\" -p \"$DOCKER_COMPOSE_PREFIX\" up -d --remove-orphans --build"
 if $USE_DOCKER_STACK ; then
   remote_command="set -e ; log() { echo '>> [remote]' \$@ ; } ; cleanup() { log 'Removing workspace...'; rm -rf \"\$HOME/workspace\" ; } ; log 'Creating workspace directory...' ; mkdir -p \"\$HOME/workspace/$DOCKER_COMPOSE_PREFIX\" ; trap cleanup EXIT ; log 'Unpacking workspace...' ; tar -C \"\$HOME/workspace/$DOCKER_COMPOSE_PREFIX\" -xjv ; log 'Launching docker stack deploy...' ; cd \"\$HOME/workspace/$DOCKER_COMPOSE_PREFIX\" ; docker stack deploy -c \"$DOCKER_COMPOSE_FILENAME\" --prune \"$DOCKER_COMPOSE_PREFIX\""
 fi
@@ -31,4 +31,4 @@ echo ">> [local] Connecting to remote host."
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
   "$SSH_USER@$SSH_HOST" -p "$SSH_PORT" \
   "$remote_command" \
-  < /tmp/workspace.tar.bz2
+  < /tmp/${WORKSPACE}.tar.bz2

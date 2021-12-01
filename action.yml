@@ -26,6 +26,10 @@ inputs:
   env_args:
     description: Env args
     required: false
+  workspace:
+    description: workspace
+    default: 'workspace'
+    required: false
 runs:
   using: docker
   image: Dockerfile
@@ -38,3 +42,4 @@ runs:
     DOCKER_COMPOSE_PREFIX: ${{ inputs.docker_compose_prefix }}
     USE_DOCKER_STACK: ${{ inputs.use_stack }}
     ENV_ARGS: ${{ inputs.env_args }}
+    WORKSPACE: ${{ inputs.workspace }}
